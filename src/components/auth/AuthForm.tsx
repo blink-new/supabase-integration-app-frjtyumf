@@ -29,18 +29,38 @@ export function AuthForm() {
     setMessage(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       })
 
       if (error) {
-        setMessage({ type: 'error', text: error.message })
-      } else {
+        console.error('Sign in error:', error)
+        let errorMessage = error.message
+        
+        // Provide more user-friendly error messages
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.'
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a moment and try again.'
+        }
+        
+        setMessage({ type: 'error', text: errorMessage })
+      } else if (data.user) {
         setMessage({ type: 'success', text: 'Successfully signed in!' })
+        // Clear form
+        setFormData({
+          email: '',
+          password: '',
+          confirmPassword: '',
+          fullName: ''
+        })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An unexpected error occurred' })
+      console.error('Unexpected sign in error:', error)
+      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -64,7 +84,7 @@ export function AuthForm() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -75,12 +95,34 @@ export function AuthForm() {
       })
 
       if (error) {
-        setMessage({ type: 'error', text: error.message })
-      } else {
+        console.error('Sign up error:', error)
+        let errorMessage = error.message
+        
+        // Provide more user-friendly error messages
+        if (error.message.includes('User already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.'
+        } else if (error.message.includes('Password should be at least')) {
+          errorMessage = 'Password must be at least 6 characters long.'
+        } else if (error.message.includes('Unable to validate email address')) {
+          errorMessage = 'Please enter a valid email address.'
+        } else if (error.message.includes('Signup is disabled')) {
+          errorMessage = 'Account registration is currently disabled. Please contact support.'
+        }
+        
+        setMessage({ type: 'error', text: errorMessage })
+      } else if (data.user) {
         setMessage({ type: 'success', text: 'Account created successfully! You are now signed in.' })
+        // Clear form
+        setFormData({
+          email: '',
+          password: '',
+          confirmPassword: '',
+          fullName: ''
+        })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An unexpected error occurred' })
+      console.error('Unexpected sign up error:', error)
+      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' })
     } finally {
       setLoading(false)
     }
